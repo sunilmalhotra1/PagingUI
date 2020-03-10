@@ -1,157 +1,297 @@
 <html>
 
 <head>
-    <script src="https://code.jquery.com/jquery-3.4.1.js"></script>
-<link rel="stylesheet" href="https://getbootstrap.com/docs/4.0/dist/css/bootstrap.min.css" />
 
-<script>
-       var pagingModel = {
+    <!-- <link rel="stylesheet" href="https://getbootstrap.com/docs/4.0/dist/css/bootstrap.min.css" /> -->
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #212529;
+            text-align: left;
+            background-color: #fff;
+        }
+
+        nav,
+        section {
+            display: block;
+        }
+
+        ul {
+            margin-top: 0;
+            margin-bottom: 1rem;
+        }
+
+        .pagination {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            padding-left: 0;
+            list-style: none;
+            border-radius: .25rem;
+        }
+
+        li {
+            display: list-item;
+            text-align: -webkit-match-parent;
+        }
+
+        .page-item:first-child .page-link {
+            margin-left: 0;
+            border-top-left-radius: .25rem;
+            border-bottom-left-radius: .25rem;
+        }
+
+        .page-link:not(:disabled):not(.disabled) {
+            cursor: pointer;
+        }
+
+        a:not([href]):not([tabindex]) {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .page-link {
+            position: relative;
+            display: block;
+            padding: .5rem .75rem;
+            margin-left: -1px;
+            line-height: 1.25;
+            color: #007bff;
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+        }
+
+        .page-item.active .page-link {
+            z-index: 1;
+            color: #fff;
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+
+        a {
+            color: #007bff;
+            text-decoration: none;
+            background-color: transparent;
+            -webkit-text-decoration-skip: objects;
+        }
+
+        .page-link:hover {
+            color: #0056b3;
+            text-decoration: none;
+            background-color: #e9ecef;
+            border-color: #dee2e6;
+        }
+
+        a:hover {
+            color: #0056b3;
+            text-decoration: underline;
+        }
+    </style>
+    <script>
+
+        var pagingModel = {
             TotalCount: 0,
             TotalPage: 0,
             PageNo: 1,
             PageSize: 10,
-            MethodName:"",
-            current: {PageNo:1, StartNo: 1, EndNo: 10,Previous:0,Next:2,RecordsFrom:1,RecordsTo:10 }
+            current: { PageNo: 1, StartNo: 1, EndNo: 10, Previous: 0, Next: 2, RecordsFrom: 1, RecordsTo: 10 }
         };
-        BindPreviousUI=function(){
-            if(pagingModel.current.PageNo==1)
-           {
-            return`<li class="page-item"><a class="page-link" title="First"  data-page="${pagingModel.current.Previous}">First</a></li>
-            <li class="page-item"><a class="page-link" title="Previous"  data-page="${pagingModel.current.Previous}" >Previous</a></li>`;
-                
-           }
-           else{
-            return `<li class="page-item"><a class="page-link" title="First"  data-page="1" onclick="${pagingModel.MethodName}(1);">First</a></li>
-            <li class="page-item"><a class="page-link" title="Previous"  data-page="${pagingModel.current.Previous}" onclick="${pagingModel.MethodName}(${pagingModel.current.Previous});">Previous</a></li>`;
-            
-           }
-        };
-        BindPageingUI=function(){
-            var pagingUI="";
-            for (let index =  pagingModel.current.StartNo; index <=  pagingModel.current.EndNo; index++) {
-                pagingUI +=`<li  onclick="${pagingModel.MethodName}(${index})" class="page-item ${index == pagingModel.current.PageNo ? "active" : ""}" ><a class="page-link" data-page="${index}" title="${index}">${index}</a></li>`;
-            }
-            return pagingUI;
-        };
-        BindNextUI=function(){
-            if(pagingModel.PageNo==pagingModel.TotalPage)
-            {
-                return`<li class="page-item"><a class="page-link" title="Next"  data-page="${pagingModel.current.Next}" >Next</a></li>
-            <li class="page-item"><a class="page-link" title="Last" data-page="${pagingModel.TotalPage}" >Last</a></li>`;
-            }
-            else{
-                return`<li class="page-item"><a class="page-link"  title="Next"  data-page="${pagingModel.current.Next}" onclick="${pagingModel.MethodName}(${pagingModel.current.Next});" >Next</a></li>
-            <li class="page-item"><a class="page-link"  title="Last" data-page="${pagingModel.TotalPage}" onclick="${pagingModel.MethodName}(${pagingModel.TotalPage});">Last</a></li>`;
-            }
-        };
-        BindRecordInfoUI=function(){
-            var msg=`Displaying ${pagingModel.current.RecordsFrom} to ${pagingModel.current.RecordsTo} of ${pagingModel.TotalCount} records`;
-            return`<li class="page-item"><a title="${msg}" class="page-link">${msg}</a></li>`;
-        };
-        /*
-        Purpose : Init the Paging UI
-        Parameters :  PageNo,PageSize,TotalCount,MethodName
-        Note : 1. This script has been tested for 10 records per page (PageSize=10).
-               2. Method which user want to bind should be initialized first into the code, then use.
-               3. For calling your custom ajax method / API, You must bind the data table according the result of your  data table and after that binding call the methoda like this.
-                  BindPagingModel(1, 10, 55,"GotoPage")
-        */
-        BindPagingModel = function (PageNo, PageSize, TotalCount,MethodName) {
-            var offsetFrom=((PageNo-1)*10);
-            pagingModel.MethodName=MethodName;
-            var recordsFrom=offsetFrom+1;
-            var recordsTo=PageNo*PageSize;
-            if(recordsTo>TotalCount)
-            {
-                recordsTo=TotalCount;
-            }
-            var TotalPage = parseInt(TotalCount / PageSize);
-          
-            if (TotalCount % PageSize > 0) {
-                TotalPage = parseInt(TotalCount / PageSize)+1;
-            }
-            pagingModel.TotalPage=TotalPage;
-            pagingModel.current.PageNo=PageNo;
-            pagingModel.TotalCount = TotalCount;
-            pagingModel.PageSize = PageSize;
-            pagingModel.current.StartNo=1;
-            if(PageNo>1)
-            {
-               
-                pagingModel.current.EndNo++;
-              
-                if(pagingModel.current.EndNo>=TotalPage || PageNo==TotalPage)
-                { 
-                    pagingModel.current.EndNo=TotalPage;
-                    if(PageNo==TotalPage)
-                    {
-                        pagingModel.PageNo=TotalPage-(PageSize-1)>1?TotalPage-(PageSize-1):1;
+        IntializePaging = function (selectorId, pageNo, pageSize, totalCount) {
+            var liTagClass = "page-item";
+            var anchorTagClass = "page-link";
+            createHtmlElement = function (tagName, classNames, childTags) {
+                var element = document.createElement(tagName);
+                element.className = classNames;
+                if (childTags != undefined) {
+                    element.appendChild(childTags);
+                }
+                return element;
+            };
+            createUpperTag = function (tagName, classNames, childTags) {
+                var element = document.createElement(tagName);
+                element.className = classNames;
+                if (childTags != undefined) {
+                    element.appendChild(childTags);
+                }
+                return element;
+            };
+            createInnerTag = function (tagName, dataset, title, classNames) {
+                var element = document.createElement(tagName);
+                element.className = classNames;
+                element.title = title;
+                element.dataset.page = dataset;
+                element.innerText = title;
+                return element;
+            };
+            PreviousButtonHtml = function (ul) {
+                var firstanchor = this.createInnerTag("a", 1, "First", anchorTagClass);
+                var previousanchor = this.createInnerTag("a", pagingModel.current.Previous, "Previous", anchorTagClass);
+                var firstli = this.createUpperTag("li", liTagClass, firstanchor);
+                var previousli = this.createUpperTag("li", liTagClass, previousanchor);
+                if (pagingModel.current.PageNo > 1) {
+                    firstli.addEventListener("click", function () {
+                        CreatePaging(selectorId, 1, pageSize, totalCount);
+                    }, false);
+                    previousli.addEventListener("click", function () {
+                        CreatePaging(selectorId, pagingModel.current.Previous, pageSize, totalCount);
+                    }, false);
+                }
+
+                ul.appendChild(firstli);
+                ul.appendChild(previousli);
+                return ul;
+
+            };
+            PagingButtonHtml = function (ul) {
+                for (let index = pagingModel.current.StartNo; index <= pagingModel.current.EndNo; index++) {
+                    var anchor = this.createInnerTag("a", index, index, anchorTagClass);
+                    var li = this.createUpperTag("li", liTagClass + (index == pagingModel.current.PageNo ? " active" : ""), anchor);
+                    li.addEventListener("click", function (e) {
+                        CreatePaging(selectorId, index, pageSize, totalCount);
+                    }, false);
+
+                    ul.appendChild(li);
+                }
+                return ul;
+            };
+            NextButtonHtml = function (ul) {
+                var nextanchor = this.createInnerTag("a", pagingModel.current.Next, "Next", anchorTagClass);
+                var lastanchor = this.createInnerTag("a", pagingModel.TotalPage, "Last", anchorTagClass);
+                var nextli = this.createUpperTag("li", liTagClass, nextanchor);
+                var lastli = this.createUpperTag("li", liTagClass, lastanchor);
+                if (pagingModel.PageNo === pagingModel.TotalPage) {
+                    console.log("");
+                }
+                else {
+                    nextli.addEventListener("click", function (e) {
+                        CreatePaging(selectorId, pagingModel.current.Next, pageSize, totalCount);
+                    }, false);
+                    lastli.addEventListener("click", function (e) {
+                        CreatePaging(selectorId, pagingModel.TotalPage, pageSize, totalCount);
+                    }, false);
+                }
+
+                ul.appendChild(nextli);
+                ul.appendChild(lastli);
+                return ul;
+
+
+            };
+            RecordInfoHtml = function (ul) {
+                var msg = `Displaying ${pagingModel.current.RecordsFrom} to ${pagingModel.current.RecordsTo} of ${pagingModel.TotalCount} records`;
+                var anchor = this.createInnerTag("a", msg, msg, anchorTagClass);
+                var li = this.createUpperTag("li", liTagClass, anchor);
+                ul.appendChild(li);
+                return ul;
+            };
+
+            CreatePaging = function (SelectorId, PageNo, PageSize, TotalCount) {
+
+                var offsetFrom = ((PageNo - 1) * 10);
+                var recordsFrom = offsetFrom + 1;
+                var recordsTo = PageNo * PageSize;
+                if (recordsTo > TotalCount) {
+                    recordsTo = TotalCount;
+                }
+                var TotalPage = parseInt(TotalCount / PageSize);
+
+                if (TotalCount % PageSize > 0) {
+                    TotalPage = parseInt(TotalCount / PageSize) + 1;
+                }
+                pagingModel.TotalPage = TotalPage;
+                pagingModel.current.PageNo = PageNo;
+                pagingModel.TotalCount = TotalCount;
+                pagingModel.PageSize = PageSize;
+                pagingModel.current.StartNo = 1;
+                if (PageNo > 1) {
+
+                    pagingModel.current.EndNo++;
+
+                    if (pagingModel.current.EndNo >= TotalPage || PageNo == TotalPage) {
+                        pagingModel.current.EndNo = TotalPage;
+                        if (PageNo == TotalPage) {
+                            pagingModel.PageNo = TotalPage - (PageSize - 1) > 1 ? TotalPage - (PageSize - 1) : 1;
+                        }
+                    }
+
+                    if (pagingModel.current.EndNo - PageNo == (PageSize - 1)) {
+                        pagingModel.current.StartNo = PageNo;
+                        pagingModel.PageNo = PageNo;
+                    }
+                    else {
+
+                        pagingModel.current.StartNo = pagingModel.PageNo;
+                    }
+
+                }
+                else {
+                    pagingModel.current.StartNo = 1;
+                    pagingModel.PageNo = PageNo;
+                    if (PageSize < TotalPage) {
+                        pagingModel.current.EndNo = PageSize;
+                    }
+                    else {
+                        pagingModel.current.EndNo = TotalPage;
                     }
                 }
-               
-                if(pagingModel.current.EndNo-PageNo==(PageSize-1))
-                {
-                    pagingModel.current.StartNo=PageNo;
-                    pagingModel.PageNo = PageNo;
-                }
-                else{
-                   
-                    pagingModel.current.StartNo=pagingModel.PageNo;
-                }
-              
-            }
-            else{
-                pagingModel.current.StartNo=1;
-                pagingModel.PageNo=PageNo;
-                if(PageSize<TotalPage)
-                {
-                    pagingModel.current.EndNo=PageSize;
-                }
-                else{
-                    pagingModel.current.EndNo=TotalPage; 
-                }
-            }
-        
-       
 
-           var prePageNo=(PageNo>1?PageNo - 1:1);
-           var nextPageNo=(PageNo<TotalPage?PageNo + 1:1);
-           pagingModel.current.Previous=prePageNo;
-           pagingModel.current.Next=nextPageNo;
-           pagingModel.current.RecordsFrom=recordsFrom;
-           pagingModel.current.RecordsTo=recordsTo;
-           
-            var bindPaging = `<section class="section-preview"><nav class="Page navigation example">
-            <ul class="pagination">`;
-           //Previous Record Navigation
-           bindPaging+=BindPreviousUI();
-            //Pagination Navigation
-           bindPaging+=BindPageingUI();
-            //Next Record Navigation
-           bindPaging+=BindNextUI();
-           //Displaying Records information 
-           bindPaging+=BindRecordInfoUI();
-           bindPaging += `</ul>`;
+                var prePageNo = PageNo > 1 ? PageNo - 1 : 1;
+                var nextPageNo = PageNo < TotalPage ? PageNo + 1 : 1;
+                pagingModel.current.Previous = prePageNo;
+                pagingModel.current.Next = nextPageNo;
+                pagingModel.current.RecordsFrom = recordsFrom;
+                pagingModel.current.RecordsTo = recordsTo;
 
-            bindPaging += `</nav></section>`;
-            $('#paging').html(bindPaging);
-            
+
+                var ul = this.createHtmlElement("ul", "pagination");
+                this.PreviousButtonHtml(ul);
+                this.PagingButtonHtml(ul);
+                this.NextButtonHtml(ul);
+                this.RecordInfoHtml(ul);
+                var nav = this.createHtmlElement("nav", "Page navigation example", ul);
+                var section = this.createHtmlElement("section", "section-preview", nav);
+                document.getElementById(SelectorId).innerHTML = "";
+                document.getElementById(SelectorId).appendChild(section);
+
+
+            };
+            this.CreatePaging(selectorId, pageNo, pageSize, totalCount);
         };
 
     </script>
 </head>
 
 <body>
-  
-        <div class="m_datatable m-datatable m-datatable--default m-datatable--loaded"   id="paging"></div>
-            
-        <script>
 
-            BindPagingModel(1, 10, 55,"GotoPage")
-            GotoPage = function (PageNo) {
-                BindPagingModel(PageNo, 10, 55,"GotoPage");
-            }
-        </script>
+    <table>
+        <thead>
+            <tr>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td></td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td>
+                    <div id="paging"></div>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <script>
+
+        IntializePaging("paging", 1, 10, 55);
+        //RetriveApiResponse("https://jsonplaceholder.typicode.com/photos");
+    </script>
 </body>
 
 </html>
