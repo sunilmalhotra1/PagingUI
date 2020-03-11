@@ -2,7 +2,6 @@
 
 <head>
 
-    <!-- <link rel="stylesheet" href="https://getbootstrap.com/docs/4.0/dist/css/bootstrap.min.css" /> -->
     <style>
         body {
             margin: 0;
@@ -93,34 +92,71 @@
     </style>
     <script>
 
-        var pagingModel = {
-            TotalCount: 0,
-            TotalPage: 0,
-            PageNo: 1,
-            PageSize: 10,
-            current: { PageNo: 1, StartNo: 1, EndNo: 10, Previous: 0, Next: 2, RecordsFrom: 1, RecordsTo: 10 }
-        };
-        IntializePaging = function (selectorId, pageNo, pageSize, totalCount) {
-            var liTagClass = "page-item";
-            var anchorTagClass = "page-link";
+        IntializePaging = function (params) {
+            let pagingModel = {
+                TotalCount: 0,
+                TotalPage: 0,
+                PageNo: 1,
+                PageSize: 10,
+                current: { PageNo: 1, StartNo: 1, EndNo: 10, Previous: 0, Next: 2, RecordsFrom: 1, RecordsTo: 10 }
+            };
+
+            let pageNo = params.pageNumuber === undefined ? 1 : params.pageNumuber;
+
+            pagingModel.PageSize = params.perPageRow === undefined ? 10 : params.perPageRow;
+            let liTagClass = "page-item";
+            let anchorTagClass = "page-link";
+
+            RetriveApiResponse = function (pageNumber) {
+                try {
+                    let request;
+                    if (window.XMLHttpRequest) {
+                        // code for modern browsers
+                        request = new XMLHttpRequest();
+                    } else {
+                        // code for old IE browsers
+                        request = new ActiveXObject("Microsoft.XMLHTTP");
+                    }
+                    request.open('POST', params.Url);
+                    request.setRequestHeader("Content-Type", "application/json");
+                    request.setRequestHeader("Accept", "application/json");
+                    request.onreadystatechange = function () {
+                        if (this.readyState === 4 && this.status === 200) {
+                            let response = JSON.parse(this.responseText);
+                            if (response !== undefined && response.result !== undefined && response.result.data !== undefined && response.result.totalCount !== undefined && response.result.totalCount > 0) {
+                                pagingModel.TotalCount = response.result.totalCount;
+                                CreatePaging(pageNumber);
+                            }
+                            //return (data);
+                        }
+                    };
+                    let companyRequest = { PageNo: pageNumber, PageSize: pagingModel.PageSize, SearchText: params.SearchText };
+                    request.send(JSON.stringify(companyRequest));
+
+                } catch (e) {
+                    console.log(e);
+                    return null;
+                }
+            };
+
             createHtmlElement = function (tagName, classNames, childTags) {
-                var element = document.createElement(tagName);
+                let element = document.createElement(tagName);
                 element.className = classNames;
-                if (childTags != undefined) {
+                if (childTags !== undefined) {
                     element.appendChild(childTags);
                 }
                 return element;
             };
             createUpperTag = function (tagName, classNames, childTags) {
-                var element = document.createElement(tagName);
+                let element = document.createElement(tagName);
                 element.className = classNames;
-                if (childTags != undefined) {
+                if (childTags !== undefined) {
                     element.appendChild(childTags);
                 }
                 return element;
             };
             createInnerTag = function (tagName, dataset, title, classNames) {
-                var element = document.createElement(tagName);
+                let element = document.createElement(tagName);
                 element.className = classNames;
                 element.title = title;
                 element.dataset.page = dataset;
@@ -128,16 +164,16 @@
                 return element;
             };
             PreviousButtonHtml = function (ul) {
-                var firstanchor = this.createInnerTag("a", 1, "First", anchorTagClass);
-                var previousanchor = this.createInnerTag("a", pagingModel.current.Previous, "Previous", anchorTagClass);
-                var firstli = this.createUpperTag("li", liTagClass, firstanchor);
-                var previousli = this.createUpperTag("li", liTagClass, previousanchor);
+                let firstanchor = this.createInnerTag("a", 1, "First", anchorTagClass);
+                let previousanchor = this.createInnerTag("a", pagingModel.current.Previous, "Previous", anchorTagClass);
+                let firstli = this.createUpperTag("li", liTagClass, firstanchor);
+                let previousli = this.createUpperTag("li", liTagClass, previousanchor);
                 if (pagingModel.current.PageNo > 1) {
                     firstli.addEventListener("click", function () {
-                        CreatePaging(selectorId, 1, pageSize, totalCount);
+                        RetriveApiResponse(1);
                     }, false);
                     previousli.addEventListener("click", function () {
-                        CreatePaging(selectorId, pagingModel.current.Previous, pageSize, totalCount);
+                        RetriveApiResponse(pagingModel.current.Previous);
                     }, false);
                 }
 
@@ -148,10 +184,10 @@
             };
             PagingButtonHtml = function (ul) {
                 for (let index = pagingModel.current.StartNo; index <= pagingModel.current.EndNo; index++) {
-                    var anchor = this.createInnerTag("a", index, index, anchorTagClass);
-                    var li = this.createUpperTag("li", liTagClass + (index == pagingModel.current.PageNo ? " active" : ""), anchor);
+                    let anchor = this.createInnerTag("a", index, index, anchorTagClass);
+                    let li = this.createUpperTag("li", liTagClass + (index === pagingModel.current.PageNo ? " active" : ""), anchor);
                     li.addEventListener("click", function (e) {
-                        CreatePaging(selectorId, index, pageSize, totalCount);
+                        RetriveApiResponse(index);
                     }, false);
 
                     ul.appendChild(li);
@@ -159,19 +195,19 @@
                 return ul;
             };
             NextButtonHtml = function (ul) {
-                var nextanchor = this.createInnerTag("a", pagingModel.current.Next, "Next", anchorTagClass);
-                var lastanchor = this.createInnerTag("a", pagingModel.TotalPage, "Last", anchorTagClass);
-                var nextli = this.createUpperTag("li", liTagClass, nextanchor);
-                var lastli = this.createUpperTag("li", liTagClass, lastanchor);
+                let nextanchor = this.createInnerTag("a", pagingModel.current.Next, "Next", anchorTagClass);
+                let lastanchor = this.createInnerTag("a", pagingModel.TotalPage, "Last", anchorTagClass);
+                let nextli = this.createUpperTag("li", liTagClass, nextanchor);
+                let lastli = this.createUpperTag("li", liTagClass, lastanchor);
                 if (pagingModel.PageNo === pagingModel.TotalPage) {
                     console.log("");
                 }
                 else {
                     nextli.addEventListener("click", function (e) {
-                        CreatePaging(selectorId, pagingModel.current.Next, pageSize, totalCount);
+                        RetriveApiResponse(pagingModel.current.Next);
                     }, false);
                     lastli.addEventListener("click", function (e) {
-                        CreatePaging(selectorId, pagingModel.TotalPage, pageSize, totalCount);
+                        RetriveApiResponse(pagingModel.TotalPage);
                     }, false);
                 }
 
@@ -182,43 +218,42 @@
 
             };
             RecordInfoHtml = function (ul) {
-                var msg = `Displaying ${pagingModel.current.RecordsFrom} to ${pagingModel.current.RecordsTo} of ${pagingModel.TotalCount} records`;
-                var anchor = this.createInnerTag("a", msg, msg, anchorTagClass);
-                var li = this.createUpperTag("li", liTagClass, anchor);
+                let msg = `Displaying ${pagingModel.current.RecordsFrom} to ${pagingModel.current.RecordsTo} of ${pagingModel.TotalCount} records`;
+                let anchor = this.createInnerTag("a", msg, msg, anchorTagClass);
+                let li = this.createUpperTag("li", liTagClass, anchor);
                 ul.appendChild(li);
                 return ul;
             };
 
-            CreatePaging = function (SelectorId, PageNo, PageSize, TotalCount) {
+            CreatePaging = function (PageNo) {
 
-                var offsetFrom = ((PageNo - 1) * 10);
-                var recordsFrom = offsetFrom + 1;
-                var recordsTo = PageNo * PageSize;
-                if (recordsTo > TotalCount) {
-                    recordsTo = TotalCount;
+                let offsetFrom = (PageNo - 1) * 10;
+                let recordsFrom = offsetFrom + 1;
+                let recordsTo = PageNo * pagingModel.PageSize;
+                if (recordsTo > pagingModel.TotalCount) {
+                    recordsTo = pagingModel.TotalCount;
                 }
-                var TotalPage = parseInt(TotalCount / PageSize);
+                let TotalPage = parseInt(pagingModel.TotalCount / pagingModel.PageSize);
 
-                if (TotalCount % PageSize > 0) {
-                    TotalPage = parseInt(TotalCount / PageSize) + 1;
+                if (pagingModel.TotalCount % pagingModel.PageSize > 0) {
+                    TotalPage = parseInt(pagingModel.TotalCount / pagingModel.PageSize) + 1;
                 }
                 pagingModel.TotalPage = TotalPage;
                 pagingModel.current.PageNo = PageNo;
-                pagingModel.TotalCount = TotalCount;
-                pagingModel.PageSize = PageSize;
+
                 pagingModel.current.StartNo = 1;
                 if (PageNo > 1) {
 
                     pagingModel.current.EndNo++;
 
-                    if (pagingModel.current.EndNo >= TotalPage || PageNo == TotalPage) {
+                    if (pagingModel.current.EndNo >= TotalPage || PageNo === TotalPage) {
                         pagingModel.current.EndNo = TotalPage;
-                        if (PageNo == TotalPage) {
-                            pagingModel.PageNo = TotalPage - (PageSize - 1) > 1 ? TotalPage - (PageSize - 1) : 1;
+                        if (PageNo === TotalPage) {
+                            pagingModel.PageNo = TotalPage - (pagingModel.PageSize - 1) > 1 ? TotalPage - (pagingModel.PageSize - 1) : 1;
                         }
                     }
 
-                    if (pagingModel.current.EndNo - PageNo == (PageSize - 1)) {
+                    if (pagingModel.current.EndNo - PageNo === (pagingModel.PageSize - 1)) {
                         pagingModel.current.StartNo = PageNo;
                         pagingModel.PageNo = PageNo;
                     }
@@ -231,37 +266,40 @@
                 else {
                     pagingModel.current.StartNo = 1;
                     pagingModel.PageNo = PageNo;
-                    if (PageSize < TotalPage) {
-                        pagingModel.current.EndNo = PageSize;
+                    if (pagingModel.PageSize < TotalPage) {
+                        pagingModel.current.EndNo = pagingModel.PageSize;
                     }
                     else {
                         pagingModel.current.EndNo = TotalPage;
                     }
                 }
 
-                var prePageNo = PageNo > 1 ? PageNo - 1 : 1;
-                var nextPageNo = PageNo < TotalPage ? PageNo + 1 : 1;
+                let prePageNo = PageNo > 1 ? PageNo - 1 : 1;
+                let nextPageNo = PageNo < TotalPage ? PageNo + 1 : 1;
                 pagingModel.current.Previous = prePageNo;
                 pagingModel.current.Next = nextPageNo;
                 pagingModel.current.RecordsFrom = recordsFrom;
                 pagingModel.current.RecordsTo = recordsTo;
 
 
-                var ul = this.createHtmlElement("ul", "pagination");
+                let ul = this.createHtmlElement("ul", "pagination");
                 this.PreviousButtonHtml(ul);
                 this.PagingButtonHtml(ul);
                 this.NextButtonHtml(ul);
                 this.RecordInfoHtml(ul);
-                var nav = this.createHtmlElement("nav", "Page navigation example", ul);
-                var section = this.createHtmlElement("section", "section-preview", nav);
-                document.getElementById(SelectorId).innerHTML = "";
-                document.getElementById(SelectorId).appendChild(section);
+                let nav = this.createHtmlElement("nav", "Page navigation example", ul);
+                let section = this.createHtmlElement("section", "section-preview", nav);
+                document.getElementById(params.SelectorId).innerHTML = "";
+                document.getElementById(params.SelectorId).appendChild(section);
 
 
             };
-            this.CreatePaging(selectorId, pageNo, pageSize, totalCount);
+            //this.CreatePaging(pageNo);
+            RetriveApiResponse(pageNo);
         };
 
+        let req = { Url: "http://localhost:53927/api/companyservice/list", CompanyType: 0, SearchText: "", SelectorId: "paging" };
+        IntializePaging(req);
     </script>
 </head>
 
@@ -289,8 +327,8 @@
 
     <script>
 
-        IntializePaging("paging", 1, 10, 55);
-        //RetriveApiResponse("https://jsonplaceholder.typicode.com/photos");
+        let req = { Url: "http://localhost:53927/api/companyservice/list", CompanyType: 0, SearchText: "", SelectorId: "paging" };
+        IntializePaging(req);
     </script>
 </body>
 
